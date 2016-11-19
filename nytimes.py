@@ -1,5 +1,8 @@
+#  -*- coding: utf-8 -*-
 from flask import Flask, render_template, request, redirect, url_for, session
 import cookielib, urllib2
+import requests
+
 app = Flask(__name__)
 
 cj = cookielib.CookieJar()
@@ -9,6 +12,13 @@ opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
 @app.route("/", methods=["POST", "GET"])
 def home():
     if request.method!="POST":
+##        page = str(requests.get('http://nytimes.com').text)
+##        s = page.split('<article')
+##        for i in s:
+##            if 'topnews' in i:
+##                pos = i.find('html">')
+##                end = i.find("</a>")
+##                L+= i[pos+6:end]          
         return render_template("index.html")
     else:
         r1 = request.form["news1"]
@@ -22,7 +32,6 @@ def home():
         r9 = request.form["news9"]
         r10 = request.form["news10"]
         stories = [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10]
-        print stories
         stories = fetch(stories)
         return render_template("stories.html", news=stories)
 
@@ -33,19 +42,33 @@ def fetch(urls):
 
     for i in urls:
         try:
-            htmlfile = opener.open(i)
-            htmltext = htmlfile.read();
+            htmltext = requests.get(i).text
+            #htmlfile = opener.open(i)
+            #htmltext = htmlfile.read()
             for a in stopwords:
                 htmltext = htmltext.replace(a, '')
             pos = htmltext.find('<p class="story-body-text story-content"')
             title = htmltext.find('<title>')
             end = htmltext.find('</title>')
             endstory = htmltext.find('</p><footer class="story-footer story-content">')
-            text +=  '<h1>' + htmltext[title + 7:end] + '</h1>' + htmltext[pos: endstory] + '<br><br><br><br><br><br><br><br>'
+            text +=  '<h1>' + htmltext[title + 7:end] + '</h1>' + htmltext[pos: endstory] + '<br><br><br><hr><br><br><br><br><br>'
         except:
             lol=''
+    #print "\n\n\nDEBUG" + text
     return text
 
+def fetch2(urls):
+    text = ''
+    for i in urls:
+        try:
+            htmltext = requests.get(i).text
+            pos = htmltext.find('<h1 class="wsj-article-headline" ')
+            end = htmltext.find('</div> <!-- data-module-name="article.app/lib/module/articleBody" -->')
+            text += htmltext[pos:end] + '<BR><BR><BR><HR><BR><BR>'
+        except:
+            lol=''
+        return text
+    
 
 if __name__=="__main__":
     app.debug = True
